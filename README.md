@@ -1,222 +1,487 @@
-# Bus Booking Management System - Full Stack Setup Guide
+# Bus Booking Management System - Backend API
 
-## 📦 Project Structure
-```
-BBS/
-├── backend/          → Node.js/Express/MongoDB API
-├── frontend/         → React/TypeScript/TailwindCSS SPA
-└── README.md         → This file
-```
+A production-ready REST API for a Bus Booking Management System built with Node.js, Express, TypeScript, and MongoDB.
 
----
+## 🚀 Features
 
-## 🗄️ DATABASE INFORMATION
+- ✅ Bus listing with advanced filtering and pagination
+- ✅ Seat layout generation and management
+- ✅ Booking creation and management
+- ✅ Real-time seat availability tracking
+- ✅ Comprehensive error handling
+- ✅ Type-safe with TypeScript
+- ✅ Scalable MongoDB integration
 
-### **Where is the Database?**
+## 📦 Installation
 
-MongoDB is configured in **`backend/.env`**:
-```env
-MONGO_URI=mongodb://localhost:27017/bus-booking
-```
+### Prerequisites
 
-**Database Name**: `bus-booking`  
-**Default Host**: `localhost:27017`  
-**Collections**:
-- `buses` - Bus information with seat layouts
-- `bookings` - Customer bookings
+- Node.js 16+
+- MongoDB (local or Atlas)
+- npm or yarn
 
-### **Option 1: Local MongoDB (Recommended for Development)**
+### Setup
 
-#### Install MongoDB Community Edition
-- **Windows**: Download from https://www.mongodb.com/try/download/community
-- **Mac**: `brew install mongodb-community`
-- **Linux**: `sudo apt-get install mongodb`
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-#### Start MongoDB Service
+2. **Create `.env` file**
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Update `.env` with your settings**
+   ```env
+   PORT=5000
+   MONGO_URI=mongodb://localhost:27017/bus-booking
+   NODE_ENV=development
+   ```
+
+## 🏃 Running the Server
+
+### Development Mode (with hot reload)
 ```bash
-# Windows (Command Prompt as Admin)
-net start MongoDB
-
-# Mac
-brew services start mongodb-community
-
-# Linux
-sudo systemctl start mongod
-```
-
-#### Verify Connection
-```bash
-mongosh
-# You should see: Current Mongosh Log ID: ...
-```
-
----
-
-### **Option 2: Docker (Alternative)**
-
-MongoDB is already containerized in `docker-compose.yml`:
-
-```bash
-cd backend
-
-# Start MongoDB + Mongo Express UI
-docker-compose up -d
-
-# MongoDB: localhost:27017
-# Mongo Express UI: http://localhost:8081
-# Login: admin / pass
-```
-
----
-
-### **Option 3: MongoDB Atlas (Cloud)**
-
-For production or cloud hosting, update `.env`:
-
-```env
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/bus-booking?retryWrites=true&w=majority
-```
-
-1. Create free account at https://www.mongodb.com/cloud/atlas
-2. Create cluster and get connection string
-3. Replace username/password with your credentials
-4. Add your IP to network access whitelist
-
----
-
-## 🚀 Quick Start (5 Minutes)
-
-### **Backend Setup**
-
-```bash
-cd backend
-
-# 1. Install dependencies
-npm install
-
-# 2. Ensure MongoDB is running (see above)
-# For Windows: net start MongoDB
-# For Mac: brew services start mongodb-community
-
-# 3. Seed sample data
-npx tsx src/seed.ts
-
-# You should see:
-# ✅ MongoDB connected
-# ✅ Created 5 sample buses
-# 🚌 Express Travels...
-# 🚌 Golden Coach...
-
-# 4. Start server
 npm run dev
-
-# Server running at http://localhost:5000
 ```
 
-### **Frontend Setup** (In separate terminal)
+### Production Mode
+```bash
+npm run build
+npm start
+```
+
+## 📋 Project Structure
+
+```
+src/
+├── config/
+│   └── db.ts                 # MongoDB connection
+├── controllers/
+│   ├── busController.ts      # Bus operations
+│   └── bookingController.ts  # Booking operations
+├── models/
+│   ├── Bus.ts                # Bus Mongoose schema
+│   └── Booking.ts            # Booking Mongoose schema
+├── routes/
+│   ├── busRoutes.ts          # Bus endpoints
+│   └── bookingRoutes.ts      # Booking endpoints
+├── types/
+│   ├── bus.types.ts          # Bus interfaces
+│   └── booking.types.ts      # Booking interfaces
+├── utils/
+│   └── seatGenerator.ts      # Seat utility functions
+├── middleware/
+│   └── errorHandler.ts       # Error handling
+├── app.ts                    # Express app setup
+└── server.ts                 # Server entry point
+```
+
+## 🔌 API Endpoints
+
+### Health Check
 
 ```bash
-cd frontend
+GET /health
+```
 
-# 1. Install dependencies
-npm install
-
-# 2. Start development server
-npm run dev
-
-# Vite dev server at http://localhost:5173
-# Browser will auto-open
+**Response:**
+```json
+{
+  "message": "Bus Booking Management System API is running",
+  "timestamp": "2024-03-06T10:30:00.000Z"
+}
 ```
 
 ---
 
-## 📡 API Connection Status
+## 🚌 Bus Endpoints
 
-✅ **Frontend → Backend**: Automatically configured in `src/services/api.ts`
-- Base URL: `http://localhost:5000/api`
-- All API calls will connect to backend
-
-✅ **Backend → Database**: Configured in `backend/.env`
-- MongoDB URI: `mongodb://localhost:27017/bus-booking`
-- Connection via Mongoose ORM
-
----
-
-## 📊 Test the Connection
-
-### **From Backend Terminal**
-```bash
-curl http://localhost:5000/health
-# Response: {"status":"OK","message":"Bus Booking API is running",...}
-```
-
-### **From Frontend (Browser Console)**
-```javascript
-const buses = await fetch('http://localhost:5000/api/buses?page=1').then(r => r.json());
-console.log(buses);
-// Should see array of 5 sample buses
-```
-
----
-
-## 🔍 Database Inspection
-
-### **MongoDB Shell Commands**
+### 1. Get All Buses (with Filtering & Pagination)
 
 ```bash
-# Connect to MongoDB
-mongosh
-
-# Inside MongoDB shell:
-use bus-booking
-
-# View all buses
-db.buses.find().pretty()
-
-# View all bookings
-db.bookings.find().pretty()
-
-# Count documents
-db.buses.countDocuments()   # Should be 5
-db.bookings.countDocuments()
-
-# Search by city
-db.buses.find({ departureCity: "Mumbai" })
-
-# Exit
-exit
+GET /api/buses?departureCity=Mumbai&arrivalCity=Delhi&date=2024-03-15&page=1&pageSize=10
 ```
 
-### **Using Mongo Express UI (if Docker)**
-- Open browser: http://localhost:8081
-- Login: admin / pass
-- Browse `bus-booking` database in left panel
+**Query Parameters:**
+- `departureCity` (optional): Filter by departure city
+- `arrivalCity` (optional): Filter by arrival city
+- `date` (optional): Filter by date (YYYY-MM-DD)
+- `seatType` (optional): Filter by seat type (Normal, Semi-Sleeper, Sleeper)
+- `isAC` (optional): Filter by AC (true/false)
+- `departureSlot` (optional): Filter by slot (Morning, Afternoon, Evening, Night)
+- `page` (default: 1): Page number
+- `pageSize` (default: 10): Results per page
+
+**Response:**
+```json
+{
+  "page": 1,
+  "pageSize": 10,
+  "totalPages": 5,
+  "totalBuses": 45,
+  "buses": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "name": "Express Travels",
+      "departureCity": "Mumbai",
+      "arrivalCity": "Delhi",
+      "departureTime": "22:00",
+      "arrivalTime": "07:00",
+      "price": 1200,
+      "totalSeats": 48,
+      "availableSeats": 10,
+      "isAC": true,
+      "busType": "Sleeper",
+      "departureSlot": "Evening",
+      "date": "2024-03-15",
+      "stops": [
+        {
+          "stopName": "Indore",
+          "arrivalTime": "02:30",
+          "departureTime": "02:45"
+        }
+      ],
+      "seatLayout": [...],
+      "createdAt": "2024-03-01T10:00:00.000Z",
+      "updatedAt": "2024-03-01T10:00:00.000Z"
+    }
+  ]
+}
+```
 
 ---
 
-## 📝 Available API Endpoints
+### 2. Create a New Bus
 
-### **Buses**
-- `GET /api/buses` - List all buses (with filters)
-- `GET /api/buses/:id` - Get specific bus
-- `POST /api/buses` - Create new bus
-- `PATCH /api/buses/:id/update-seats` - Update seat availability
+```bash
+POST /api/buses
+Content-Type: application/json
+```
 
-### **Bookings**
-- `POST /api/bookings` - Create booking
-- `GET /api/bookings/:id` - Get booking details
-- `GET /api/bookings/bus/:busId` - Get bookings for bus
-- `PUT /api/bookings/:id/cancel` - Cancel booking
+**Request Body:**
+```json
+{
+  "name": "Express Travels",
+  "departureCity": "Mumbai",
+  "arrivalCity": "Delhi",
+  "departureTime": "22:00",
+  "arrivalTime": "07:00",
+  "price": 1200,
+  "totalSeats": 48,
+  "isAC": true,
+  "busType": "Sleeper",
+  "departureSlot": "Evening",
+  "date": "2024-03-15",
+  "stops": [
+    {
+      "stopName": "Indore",
+      "arrivalTime": "02:30",
+      "departureTime": "02:45"
+    }
+  ]
+}
+```
 
-👉 Full API documentation: See [backend/README.md](backend/README.md)
+**Response (201 Created):**
+```json
+{
+  "message": "Bus created successfully",
+  "bus": {
+    "_id": "507f1f77bcf86cd799439011",
+    "name": "Express Travels",
+    "departureCity": "Mumbai",
+    "arrivalCity": "Delhi",
+    "departureTime": "22:00",
+    "arrivalTime": "07:00",
+    "price": 1200,
+    "totalSeats": 48,
+    "availableSeats": 48,
+    "isAC": true,
+    "busType": "Sleeper",
+    "departureSlot": "Evening",
+    "date": "2024-03-15",
+    "stops": [...],
+    "seatLayout": [
+      {
+        "seatNumber": "A1",
+        "row": 0,
+        "column": 0,
+        "seatType": "Upper",
+        "sleeperLevel": "Upper",
+        "isAvailable": true,
+        "price": 1080
+      }
+    ],
+    "createdAt": "2024-03-01T10:00:00.000Z",
+    "updatedAt": "2024-03-01T10:00:00.000Z"
+  }
+}
+```
 
 ---
 
-## ⚙️ Environment Configuration
+### 3. Get Bus by ID (with Seat Layout)
 
-### Backend Environment Variables
+```bash
+GET /api/buses/507f1f77bcf86cd799439011
+```
 
-Create `backend/.env` (or edit existing):
+**Response:**
+```json
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "name": "Express Travels",
+  "departureCity": "Mumbai",
+  "arrivalCity": "Delhi",
+  "departureTime": "22:00",
+  "arrivalTime": "07:00",
+  "price": 1200,
+  "totalSeats": 48,
+  "availableSeats": 10,
+  "isAC": true,
+  "busType": "Sleeper",
+  "departureSlot": "Evening",
+  "date": "2024-03-15",
+  "stops": [...],
+  "seatLayout": [
+    {
+      "seatNumber": "A1",
+      "row": 0,
+      "column": 0,
+      "seatType": "Upper",
+      "sleeperLevel": "Upper",
+      "isAvailable": false,
+      "price": 1080
+    },
+    {
+      "seatNumber": "A2",
+      "row": 0,
+      "column": 1,
+      "seatType": "Lower",
+      "sleeperLevel": "Lower",
+      "isAvailable": true,
+      "price": 1200
+    }
+  ]
+}
+```
+
+---
+
+## 💳 Booking Endpoints
+
+### 1. Create a Booking
+
+```bash
+POST /api/bookings
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "busId": "507f1f77bcf86cd799439011",
+  "seats": ["A1", "A2", "B1"],
+  "passengerDetails": [
+    {
+      "name": "John Doe",
+      "age": 28,
+      "gender": "Male"
+    },
+    {
+      "name": "Jane Smith",
+      "age": 26,
+      "gender": "Female"
+    },
+    {
+      "name": "Bob Wilson",
+      "age": 35,
+      "gender": "Male"
+    }
+  ]
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "message": "Booking successful",
+  "bookingId": "507f1f77bcf86cd799439012",
+  "seatsBooked": ["A1", "A2", "B1"],
+  "totalPrice": 3480,
+  "status": "Confirmed"
+}
+```
+
+**Error Response (400):**
+```json
+{
+  "message": "Seats A1, A3 are already booked",
+  "unavailableSeats": ["A1", "A3"]
+}
+```
+
+---
+
+### 2. Get Booking by ID
+
+```bash
+GET /api/bookings/507f1f77bcf86cd799439012
+```
+
+**Response:**
+```json
+{
+  "_id": "507f1f77bcf86cd799439012",
+  "busId": {
+    "_id": "507f1f77bcf86cd799439011",
+    "name": "Express Travels",
+    "departureCity": "Mumbai",
+    "arrivalCity": "Delhi"
+  },
+  "seats": ["A1", "A2", "B1"],
+  "passengerDetails": [
+    {
+      "name": "John Doe",
+      "age": 28,
+      "gender": "Male"
+    }
+  ],
+  "totalPrice": 3480,
+  "status": "Confirmed",
+  "createdAt": "2024-03-06T10:30:00.000Z",
+  "updatedAt": "2024-03-06T10:30:00.000Z"
+}
+```
+
+---
+
+### 3. Get All Bookings for a Bus
+
+```bash
+GET /api/bookings/bus/507f1f77bcf86cd799439011?page=1&pageSize=10
+```
+
+**Response:**
+```json
+{
+  "page": 1,
+  "pageSize": 10,
+  "totalBookings": 15,
+  "totalPages": 2,
+  "bookings": [...]
+}
+```
+
+---
+
+### 4. Cancel a Booking
+
+```bash
+PUT /api/bookings/507f1f77bcf86cd799439012/cancel
+```
+
+**Response:**
+```json
+{
+  "message": "Booking cancelled successfully",
+  "booking": {
+    "_id": "507f1f77bcf86cd799439012",
+    "busId": "507f1f77bcf86cd799439011",
+    "seats": ["A1", "A2", "B1"],
+    "passengerDetails": [...],
+    "totalPrice": 3480,
+    "status": "Cancelled",
+    "createdAt": "2024-03-06T10:30:00.000Z",
+    "updatedAt": "2024-03-06T10:45:00.000Z"
+  }
+}
+```
+
+---
+
+## 🔒 Error Handling
+
+The API returns appropriate HTTP status codes and error messages:
+
+### Common Errors
+
+**400 - Bad Request**
+```json
+{
+  "message": "Missing required fields: busId, seats, passengerDetails"
+}
+```
+
+**404 - Not Found**
+```json
+{
+  "message": "Bus not found"
+}
+```
+
+**500 - Server Error**
+```json
+{
+  "message": "Error creating booking",
+  "error": "Internal server error details"
+}
+```
+
+---
+
+## 📊 Database Models
+
+### Bus Model
+- `name`: String (required)
+- `departureCity`: String (required, indexed)
+- `arrivalCity`: String (required, indexed)
+- `departureTime`: String (required)
+- `arrivalTime`: String (required)
+- `price`: Number (required)
+- `totalSeats`: Number (required)
+- `availableSeats`: Number (required)
+- `isAC`: Boolean (default: false)
+- `busType`: Enum (Normal, Semi-Sleeper, Sleeper)
+- `departureSlot`: Enum (Morning, Afternoon, Evening, Night)
+- `date`: String (required, indexed)
+- `stops`: Array of stops
+- `seatLayout`: Array of seats
+- `createdAt`: Timestamp
+- `updatedAt`: Timestamp
+
+### Booking Model
+- `busId`: ObjectId (reference to Bus)
+- `seats`: Array of seat numbers
+- `passengerDetails`: Array of passenger objects
+- `totalPrice`: Number
+- `status`: Enum (Pending, Confirmed, Cancelled)
+- `createdAt`: Timestamp
+- `updatedAt`: Timestamp
+
+---
+
+## 🛠️ Development
+
+### Adding New Fields
+
+1. Update TypeScript interfaces in `src/types/`
+2. Update MongoDB schema in `src/models/`
+3. Update controller logic in `src/controllers/`
+
+### Testing Endpoints
+
+Use tools like:
+- **Postman** - API testing GUI
+- **cURL** - Command line
+- **Thunder Client** - VS Code extension
+- **REST Client** - VS Code extension
+
+---
+
+## 📝 Environment Variables
 
 ```env
 # Server
@@ -225,147 +490,22 @@ NODE_ENV=development
 
 # Database
 MONGO_URI=mongodb://localhost:27017/bus-booking
-
-# CORS
-CORS_ORIGIN=http://localhost:5173,http://localhost:3000
-```
-
-### Frontend Configuration
-
-Already configured in `src/services/api.ts`:
-```typescript
-const API_BASE_URL = 'http://localhost:5000/api';
 ```
 
 ---
 
-## 🛠️ Useful Commands
+## 📄 License
 
-### Backend
-
-```bash
-cd backend
-
-# Development
-npm run dev          # Start with hot reload
-
-# Production
-npm run build        # Compile TypeScript
-npm start            # Run compiled code
-
-# Database
-npm run seed         # Populate sample data
-npx tsx src/seed.ts  # Alternative seed command
-
-# Utility
-npm install          # Install dependencies
-npm update           # Update packages
-```
-
-### Frontend
-
-```bash
-cd frontend
-
-# Development
-npm run dev          # Start Vite dev server
-
-# Production
-npm run build        # Build for production
-npm run preview      # Preview build
-
-# Utility
-npm install          # Install dependencies
-```
+ISC
 
 ---
 
-## 🆘 Troubleshooting
+## 🤝 Contributing
 
-### **MongoDB Connection Failed**
-
-**Error**: `connect ECONNREFUSED 127.0.0.1:27017`
-
-**Solution**:
-1. Check MongoDB is installed: `mongosh --version`
-2. Start MongoDB service:
-   - Windows: `net start MongoDB`
-   - Mac: `brew services start mongodb-community`
-3. Verify: `mongosh` should connect without error
-
-### **Port 5000 Already in Use**
-
-**Solution**:
-```bash
-# Change PORT in backend/.env to 5000-5999
-# Or kill existing process:
-lsof -ti:5000 | xargs kill -9  # Mac/Linux
-# Windows: netstat -ano | findstr :5000
-```
-
-### **Frontend Can't Connect to Backend**
-
-**Check**:
-1. Backend running? `curl http://localhost:5000/health`
-2. Correct API URL? Check `frontend/src/services/api.ts`
-3. CORS enabled? Backend has CORS middleware enabled
-
-### **Seed Script Fails**
-
-**Solution**:
-```bash
-cd backend/src
-npx tsx seed.ts
-
-# Common error: "Cannot find module"
-# Fix: npm install
-```
+Contributions are welcome! Please follow the existing code structure and add TypeScript types for all new features.
 
 ---
 
-## 📚 File Locations Summary
+## 📞 Support
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| **Database** | MongoDB at `localhost:27017` | Stores all bus & booking data |
-| **Backend API** | `backend/src/` | Express server with routes |
-| **Frontend App** | `frontend/src/` | React application |
-| **Database Config** | `backend/.env` | MongoDB connection string |
-| **API Config** | `frontend/src/services/api.ts` | Backend URL |
-| **Sample Data** | `backend/src/seed.ts` | 5 sample buses |
-
----
-
-## ✅ Verification Checklist
-
-- [ ] MongoDB installed and running (`mongosh` connects)
-- [ ] Backend dependencies installed (`npm install` in backend/)
-- [ ] Sample data seeded (5 buses visible in `db.buses.find()`)
-- [ ] Backend server running (`npm run dev` shows startup banner)
-- [ ] Backend health check passes (`curl http://localhost:5000/health`)
-- [ ] Frontend dependencies installed (`npm install` in frontend/)
-- [ ] Frontend connecting to backend (no CORS errors)
-- [ ] Can see buses on home page
-- [ ] Can book a bus end-to-end
-
----
-
-## 📖 Additional Documentation
-
-- **Backend API Details**: [backend/README.md](backend/README.md)
-- **Quick Start Guide**: [backend/QUICKSTART.md](backend/QUICKSTART.md)
-- **TypeScript Types**: Backend: `backend/src/types/` | Frontend: `frontend/src/types/`
-- **Database Models**: `backend/src/models/`
-
----
-
-## 🎉 You're Ready!
-
-1. Start MongoDB service
-2. Run `npm run dev` in backend/
-3. Run `npm run dev` in frontend/
-4. Open http://localhost:5173 in browser
-5. Search for buses, book seats, and confirm booking!
-
-**Questions?** Check the troubleshooting section above.
-# Brr-Brr-Bus
+For issues or questions, please create an issue in the repository.
