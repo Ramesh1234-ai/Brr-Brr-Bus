@@ -1,8 +1,44 @@
+# Dependencies
 node_modules/
-dist/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables - NEVER commit these
 .env
 .env.local
-.DS_Store
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Build outputs
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Cache
+.eslintcache
+node_modules/.cache
